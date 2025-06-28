@@ -11,12 +11,15 @@ export default async (req: any, res: any) => {
     logger: ['error', 'warn'],
   });
 
+  // Enable CORS with specific origin
   app.enableCors({
-    origin: 'https://phoenix-trading-frx.vercel.app',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
+    origin: 'https://phoenix-trading-frx.vercel.app', // Exact frontend origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',       // Allowed methods
+    allowedHeaders: 'Content-Type, Authorization',   // Allowed headers
+    credentials: true,                              // Allow cookies/auth credentials if needed
   });
 
+  // MongoDB connection
   try {
     await mongoose.connect(process.env.MONGODB_URI!);
     console.log('Connected to MongoDB');
