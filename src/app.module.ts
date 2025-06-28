@@ -1,13 +1,15 @@
-import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
-import { User, UserSchema } from './schemas/user.schema';
 
 @Module({
-  imports: [
-    MongooseModule.forRoot(process.env.MONGODB_URI!),
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    AuthModule,
-  ],
+  imports: [AuthModule],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Example: Skip authentication for register route
+    consumer.apply((req, res, next) => {
+      if (req.path === '/api/auth/register' && req.method === 'POST') return next();
+      // Apply your guard here for other routes
+    }).forRoutes('*');
+  }
+}
