@@ -4,6 +4,7 @@ import { TradesController } from './trades.controller';
 import { TradesService } from './trades.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Trade, TradeSchema } from './trade.entity';
+import { ContactController } from '../trades/contact.controller';
 
 @Module({
   imports: [
