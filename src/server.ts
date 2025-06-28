@@ -4,8 +4,22 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { HttpExceptionFilter } from './filters/http-exception.filter'; // Create this filter
 
 const expressApp = express();
+
+// Custom HTTP Exception Filter
+class HttpExceptionFilter {
+  catch(exception: any, host: any) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse();
+    const status = exception.getStatus ? exception.getStatus() : 500;
+    response.status(status).json({
+      success: false,
+      message: exception.message || 'Internal server error',
+    });
+  }
+}
 
 export default async (req: any, res: any) => {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
@@ -23,20 +37,17 @@ export default async (req: any, res: any) => {
   // Add global validation pipe
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
-  // MongoDB connection
+  // Add global exception filter
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // MongoDB connection with fallback
   try {
-    await mongoose.connect(process.env.MONGODB_URI!);
+    await mongoose.connect(process.env.MONGODB_URI || '');
     console.log('Connected to MongoDB');
   } catch (err) {
     console.error('MongoDB connection error:', err);
-    return res.status(500).json({ error: 'Database connection failed' });
+    return res.status(500).json({ success: false, message: 'Database connection failed' });
   }
-
-  // Global exception filter to return JSON
-  app.use((err: any, req: any, res: any, next: any) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Internal server error' });
-  });
 
   await app.init();
   await app.getHttpAdapter().getInstance().handle(req, res);
