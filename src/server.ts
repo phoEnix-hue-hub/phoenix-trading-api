@@ -4,22 +4,9 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { HttpExceptionFilter } from './filters/http-exception.filter'; // Create this filter
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 const expressApp = express();
-
-// Custom HTTP Exception Filter
-class HttpExceptionFilter {
-  catch(exception: any, host: any) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
-    const status = exception.getStatus ? exception.getStatus() : 500;
-    response.status(status).json({
-      success: false,
-      message: exception.message || 'Internal server error',
-    });
-  }
-}
 
 export default async (req: any, res: any) => {
   const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
