@@ -14,8 +14,10 @@ export default async (req: any, res: any) => {
   console.log('Request received:', req.url, req.method);
   try {
     if (mongoose.connection.readyState === 0) {
-      console.log('Attempting MongoDB connection with URI:', process.env.MONGODB_URI);
-      await mongoose.connect(process.env.MONGODB_URI || '', {});
+      const uri = process.env.MONGODB_URI;
+      if (!uri) throw new Error('MONGODB_URI is not set');
+      console.log('Attempting MongoDB connection with URI:', uri);
+      await mongoose.connect(uri, {});
       console.log('Connected to MongoDB');
     }
 
@@ -40,6 +42,7 @@ export default async (req: any, res: any) => {
   } catch (err) {
     console.error('Server error details:', err);
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    res.status(500).json({ success: false, message: 'Internal server error', error: errorMessage });
+    res.status(err instanceof Error && err.name === 'UnauthorizedError' ? 401 : 500)
+       .json({ success: false, message: errorMessage });
   }
 };
