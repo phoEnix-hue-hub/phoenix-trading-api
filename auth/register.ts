@@ -2,23 +2,25 @@ import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 import mongoose from 'mongoose';
-import { AppModule } from '../src/app.module'; // Adjusted from '../../src/app.module'
+import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { HttpExceptionFilter } from '../src/filters/http-exception.filter'; // Adjusted from '../../src/filters/http-exception.filter'
+import { HttpExceptionFilter } from '../src/filters/http-exception.filter';
 
 const expressApp = express();
 
 let cachedApp: any = null;
 
 export default async (req: any, res: any) => {
+  console.log('Request received:', req.url, req.method);
   try {
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI || '', {
-    // Removed deprecated options; Mongoose 6+ handles this automatically
-      });
+      console.log('Attempting MongoDB connection with URI:', process.env.MONGODB_URI);
+      await mongoose.connect(process.env.MONGODB_URI || '', {});
       console.log('Connected to MongoDB');
     }
+
     if (!cachedApp) {
+      console.log('Initializing NestJS app');
       const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
       app.enableCors({
         origin: 'https://phoenix-trading-b7y2dn094-phoenixs-projects-300fd110.vercel.app',
@@ -30,11 +32,14 @@ export default async (req: any, res: any) => {
       app.useGlobalFilters(new HttpExceptionFilter());
       await app.init();
       cachedApp = app;
+      console.log('NestJS app initialized');
     }
 
+    console.log('Handling request');
     await cachedApp.getHttpAdapter().getInstance().handle(req, res);
   } catch (err) {
-    console.error('Server error:', err);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    console.error('Server error details:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    res.status(500).json({ success: false, message: 'Internal server error', error: errorMessage });
   }
 };
