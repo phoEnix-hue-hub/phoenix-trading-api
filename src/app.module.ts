@@ -1,16 +1,21 @@
 import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './auth/auth.module';     
 import { Request, Response, NextFunction } from 'express';
 
 @Module({
   imports: [AuthModule],
 })
-export class AppModule implements NestModule {
+export class AppModule implements NestModule {       
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req: Request, res: Response, next: NextFunction) => {
-        if (req.path === '/api/auth/register' && req.method === 'POST') return next();
-        // Apply your guard here for other routes if needed
+        console.log(`Middleware hit for ${req.method} ${req.url}`);
+        if (req.path === '/api/auth/register' && req.method === 'POST') {
+          console.log('Allowing /api/auth/register POST');
+          return next();
+        }
+        console.log('Blocking or passing to next middleware/guard');
+        return next(); // Allow other routes to proceed to guards or controllers
       })
       .forRoutes('*');
   }
